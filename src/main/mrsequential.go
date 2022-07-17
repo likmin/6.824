@@ -28,26 +28,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	mapf, reducef := loadPlugin(os.Args[1])
+	mapfunc, reducefunc := loadPlugin(os.Args[1])
 
+	fmt.Fprintf(os.Stdout, "helloworld\n")
 	//
 	// read each input file,
 	// pass it to Map,
 	// accumulate the intermediate Map output.
 	//
 	intermediate := []mr.KeyValue{}
-	for _, filename := range os.Args[2:] {
-		file, err := os.Open(filename)
+
+	for _,filename := range os.Args[2:] {
+		
+		// open the file
+		fp,err := os.Open(filename)
 		if err != nil {
-			log.Fatalf("cannot open %v", filename)
+			fmt.Fprintf(os.Stderr, "cannot open file %v", filename)
 		}
-		content, err := ioutil.ReadAll(file)
+
+		// read file content
+		content,err := ioutil.ReadAll(fp)
 		if err != nil {
-			log.Fatalf("cannot read %v", filename)
+			fmt.Fprintf(os.Stderr, "cannot read file %v", filename)
 		}
-		file.Close()
-		kva := mapf(filename, string(content))
-		intermediate = append(intermediate, kva...)
+
+		kv := mapfunc(filename, string(content))
+		intermediate = append(intermediate, kv...)
 	}
 
 	//
@@ -67,21 +73,23 @@ func main() {
 	//
 	i := 0
 	for i < len(intermediate) {
-		j := i + 1
+		j := i+1
 		for j < len(intermediate) && intermediate[j].Key == intermediate[i].Key {
 			j++
 		}
+		
 		values := []string{}
 		for k := i; k < j; k++ {
 			values = append(values, intermediate[k].Value)
 		}
-		output := reducef(intermediate[i].Key, values)
 
-		// this is the correct format for each line of Reduce output.
+		output := reducefunc(intermediate[i].Key, values)
 		fmt.Fprintf(ofile, "%v %v\n", intermediate[i].Key, output)
-
 		i = j
+
 	}
+
+
 
 	ofile.Close()
 }

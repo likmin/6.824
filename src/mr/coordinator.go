@@ -5,7 +5,8 @@ import "net"
 import "os"
 import "net/rpc"
 import "net/http"
-
+import "strconv"
+import "fmt"
 
 type Coordinator struct {
 	// Your definitions here.
@@ -13,7 +14,13 @@ type Coordinator struct {
 }
 
 // Your code here -- RPC handlers for the worker to call.
-
+func (c *Coordinator) GetTask(args *MrArgs, task *MrTask) error {
+	if args.RequestTask == true {
+		task.Filename = "likai" + strconv.Itoa(args.Uid)
+		fmt.Printf("listen from %v",args.Uid)
+	} 
+	return nil
+}
 //
 // an example RPC handler.
 //

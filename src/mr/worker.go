@@ -4,7 +4,7 @@ import "fmt"
 import "log"
 import "net/rpc"
 import "hash/fnv"
-
+import "os"
 
 //
 // Map functions return a slice of KeyValue.
@@ -35,7 +35,32 @@ func Worker(mapf func(string, string) []KeyValue,
 
 	// uncomment to send the Example RPC to the coordinator.
 	// CallExample()
+	CallForTask()
+}
 
+func CallForTask() MrTask {
+	// declare an argument structure.
+	args := MrArgs{}
+
+	// fill in the argument(s).
+	args.RequestTask = true
+	args.Uid = os.Getuid()
+	
+	// declare a reply structure.
+	task := MrTask{}
+	
+	// send the RPC request, wait for the reply.
+	// the "Coordinator.Example" tells the
+	// receiving server that we'd like to call
+	// the Example() method of struct Coordinator.
+	ok := call("Coordinator.GetTask", &args, &task)
+	if ok {
+		// reply.Y should be 100.
+		fmt.Printf("task.Filename %v\n", task.Filename)
+	} else {
+		fmt.Printf("call failed!\n")
+	}
+	return task
 }
 
 //
