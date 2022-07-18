@@ -21,14 +21,25 @@ type ExampleArgs struct {
 type ExampleReply struct {
 	Y int
 }
+type WorkerState int32
+
+const (
+	Idle WorkerState = iota
+	Progressing
+	Completed
+)
 
 // Add your RPC definitions here.
-type MrArgs struct {
-	RequestTask bool
-	Uid int
+type MrWorker struct {
+	WorkerID int
+	Sockname string
+	Tasktype string // map or reduce
+	State    WorkerState
 }
 
 type MrTask struct {
+	Sockname string
+	Tasktype string 
 	Filename string
 }
 // Cook up a unique-ish UNIX-domain socket name

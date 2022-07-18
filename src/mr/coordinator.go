@@ -10,15 +10,19 @@ import "fmt"
 
 type Coordinator struct {
 	// Your definitions here.
+	Sockname 	string
+	workers   []int
+	files     []string
 
 }
 
 // Your code here -- RPC handlers for the worker to call.
-func (c *Coordinator) GetTask(args *MrArgs, task *MrTask) error {
-	if args.RequestTask == true {
-		task.Filename = "likai" + strconv.Itoa(args.Uid)
-		fmt.Printf("listen from %v",args.Uid)
-	} 
+func (c *Coordinator) GetTask(args *MrWorker, task *MrTask) error {
+
+	task.Filename = "likai" + strconv.Itoa(args.Sockname)
+
+	fmt.Printf("listen from %v",args.Sockname)
+	
 	return nil
 }
 //
@@ -40,6 +44,7 @@ func (c *Coordinator) server() {
 	rpc.HandleHTTP()
 	//l, e := net.Listen("tcp", ":1234")
 	sockname := coordinatorSock()
+	c.Sockname = sockname
 	os.Remove(sockname)
 	l, e := net.Listen("unix", sockname)
 	if e != nil {
@@ -70,8 +75,21 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{}
 
 	// Your code here.
+	for i < len(files) {
+		c.files = append(c.files, files[i])
+	}
+	
+	for i < nReduce {
+		c.workers = append(c.workers, i)
+	}
+	
+	for i := range c.files {
+		fmt.Printf("%v file need to be processed\n",i)
+	}
 
-
+	for i := range c.workers {
+		fmt.Printf("%v worker\n",i)
+	}
 	c.server()
 	return &c
 }

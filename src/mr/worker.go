@@ -13,7 +13,7 @@ type KeyValue struct {
 	Key   string
 	Value string
 }
-
+type ByKey []KeyValue
 //
 // use ihash(key) % NReduce to choose the reduce
 // task number for each KeyValue emitted by Map.
@@ -35,7 +35,48 @@ func Worker(mapf func(string, string) []KeyValue,
 
 	// uncomment to send the Example RPC to the coordinator.
 	// CallExample()
-	CallForTask()
+	args, mrtask := CallForTask()
+	filename := mrtask.Filename
+	// open the file
+	fp,err := os.Open(filename)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "cannot open file %v", filename)
+	}
+	
+	// read file content
+	content,err := ioutil.ReadAll(fp)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "cannot read file %v", filename)
+	}
+	
+	kv := mapf(filename, string(content))
+	intermediate = append(intermediate, kv...)
+	
+	sort.Sort(ByKey(intermediate))
+
+	oname := "mr-out-"+args.Uid
+
+	ofile, _ := os.Create(oname)
+
+	i := 0
+	for i < len(intermediate) {
+		j := i+1
+		for j < len(intermediate) && intermediate[j].Key == intermediate[i].Key {
+			j++
+		}
+		
+		values := []string{}
+		for k := i; k < j; k++ {
+			values = append(values, intermediate[k].Value)
+		}
+
+		output := reducefunc(intermediate[i].Key, values)
+		fmt.Fprintf(ofile, "%v %v\n", intermediate[i].Key, output)
+		i = j
+
+	}
+
+	ofile.Close()
 }
 
 func CallForTask() MrTask {
@@ -60,7 +101,7 @@ func CallForTask() MrTask {
 	} else {
 		fmt.Printf("call failed!\n")
 	}
-	return task
+	return args, task
 }
 
 //
